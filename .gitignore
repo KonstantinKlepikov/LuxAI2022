@@ -152,6 +152,11 @@ docker-stack.yml
 logs
 
 # source data
-data/
 lux-design/
+Lux-Design-S2/
 *.mp4
+
+# output
+src/output/
+submission.tar.gz
+

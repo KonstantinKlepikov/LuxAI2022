@@ -2,6 +2,7 @@
 
 Available cli
 
+- `make fit`
 - `make play`
 - `make replay`
 - `make submission`

@@ -1,3 +1,6 @@
+fit:
+	cd src/engine && python train.py --n-envs 10 --log-path logs/fit  --seed 42
+
 play:
 	luxai-s2 src/engine/main.py src/engine/main.py --out=src/engine/replays/replay.json
 

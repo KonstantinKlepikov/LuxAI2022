@@ -159,4 +159,5 @@ Lux-Design-S2/
 # output
 src/output/
 submission.tar.gz
-
+replay*.json
+replay*.html

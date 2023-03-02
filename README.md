@@ -8,4 +8,6 @@ Available cli
 - `make submission`
 - `make submit`
 
-For more infos and rules look at info.md
+For more infos and rules look at game_specification.md
+
+Is used **Python 3.10.6**

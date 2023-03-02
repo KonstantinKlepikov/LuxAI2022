@@ -14,11 +14,13 @@
 - April 25, 2023 - Team Merger Deadline. This is the last day participants may join or merge teams.
 - April 25, 2023 - Final Submission Deadline.
 
-## Install and run bots
+## Install, run bots and make submissions
 
 `pip install --upgrade luxai_s2`
 
 `pip install juxai-s2` installs the GPU version, requires a compatible GPU
+
+### Run
 
 `luxai-s2 path/to/bot/main.py path/to/bot/main.py -v 2 -o replay.json`
 
@@ -26,7 +28,7 @@ To visualize game [go here](https://s2vis.lux-ai.org/). Or create own: `luxai-s2
 
 [More information about cli](https://github.com/Lux-AI-Challenge/Lux-Design-S2/blob/main/luxai_s2/luxai_runner/README.md)
 
-## [Python-kit](https://github.com/Lux-AI-Challenge/Lux-Design-2022/tree/main/kits/python/)
+### [Python-kit](https://github.com/Lux-AI-Challenge/Lux-Design-2022/tree/main/kits/python/)
 
 Your core agent code will go into `agent.py`, and you can create and use more files to help you as well. You should leave `main.py` alone as that code enables your agent to compete against other agents locally and on Kaggle.
 
@@ -50,7 +52,7 @@ With cli: `kaggle competitions submit -c lux-ai-season-2 -f submission.tar.gz -m
 
 ### Карта
 
-Мир Lux представлен в виде 2d сетки. Координаты увеличиваются на восток (справа) и юг (вниз). **Карта всегда квадратная и имеет длину 48 тайлов**. Координата (0, 0) находится вверху слева. На карте есть различные функции, включая необработанные ресурсы (лед, руда), добытые ресурсы (вода, метал), роботы (легкие, тяжелые), фабрики, щебень и лишайник.
+Мир Lux представлен в виде 2d сетки. Координаты увеличиваются на восток (справа) и юг (вниз). **Карта всегда квадратная и имеет длину 48 тайлов**. Координата (0, 0) находится вверху слева. На карте есть различные объекты, включая необработанные ресурсы (лед, руда), добытые ресурсы (вода, метал), роботы (легкие, тяжелые), фабрики, щебень и лишайник.
 
 Для простоты координата (x, y) в объекте карты, к примеру, таком как щебень, индексируется в виде `board.rubble[x][y]`.
 

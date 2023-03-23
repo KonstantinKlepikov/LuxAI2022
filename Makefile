@@ -1,5 +1,8 @@
 fit:
-	cd src/engine && python train.py --n-envs 10 --log-path logs/fit  --seed 42
+	cd src/engine && python train.py --n-envs 10 --log-path logs/fit/exp_$(ARG) --seed 42
+
+board:
+	cd src/engine && tensorboard --logdir logs
 
 play:
 	luxai-s2 src/engine/main.py src/engine/main.py --out=src/engine/replays/replay_`date +'%y.%m.%d_%H:%M'`.json

@@ -161,3 +161,4 @@ src/output/
 submission.tar.gz
 replay*.json
 replay*.html
+src/engine/data

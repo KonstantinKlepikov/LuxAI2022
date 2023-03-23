@@ -4,9 +4,11 @@ from typing import Any, Dict
 import numpy as np
 import numpy.typing as npt
 from gym import spaces
+from luxai_s2.state import ObservationStateDict
 
 
-# Controller class copied here since you won't have access to the luxai_s2 package directly on the competition server
+# Controller class copied here since you won't have access to the luxai_s2
+# package directly on the competition server
 class Controller:
     def __init__(self, action_space: spaces.Space) -> None:
         self.action_space = action_space
@@ -15,14 +17,15 @@ class Controller:
         self, agent: str, obs: Dict[str, Any], action: npt.NDArray
     ):
         """
-        Takes as input the current "raw observation" and the parameterized action and returns
-        an action formatted for the Lux env
+        Takes as input the current "raw observation" and the parameterized
+        action and returns an action formatted for the Lux env
         """
         raise NotImplementedError()
 
     def action_masks(self, agent: str, obs: Dict[str, Any]):
         """
-        Generates a boolean action mask indicating in each discrete dimension whether it would be valid or not
+        Generates a boolean action mask indicating in each discrete
+        dimension whether it would be valid or not
         """
         raise NotImplementedError()
 
@@ -31,15 +34,18 @@ class SimpleUnitDiscreteController(Controller):
     def __init__(self, env_cfg) -> None:
         """
         A simple controller that controls only the robot that will get spawned.
-        Moreover, it will always try to spawn one heavy robot if there are none regardless of action given
+        Moreover, it will always try to spawn one heavy robot if there are
+        none regardless of action given
 
         For the robot unit
         - 4 cardinal direction movement (4 dims)
         - a move center no-op action (1 dim)
-        - transfer action just for transferring ice in 4 cardinal directions or center (5)
+        - transfer action just for transferring ice in 4 cardinal directions
+        or center (5)
         - pickup action for power (1 dims)
         - dig action (1 dim)
-        - no op action (1 dim) - equivalent to not submitting an action queue which costs power
+        - no op action (1 dim) - equivalent to not submitting an action queue
+        which costs power
 
         It does not include
         - self destruct action
@@ -48,8 +54,9 @@ class SimpleUnitDiscreteController(Controller):
         - factory actions
         - transferring power or resources other than ice
 
-        To help understand how to this controller works to map one action space to the original lux action space,
-        see how the lux action space is defined in luxai_s2/spaces/action.py
+        To help understand how to this controller works to map one action
+        space to the original lux action space, see how the lux action space
+        is defined in luxai_s2/spaces/action.py
 
         """
         self.env_cfg = env_cfg
@@ -96,6 +103,34 @@ class SimpleUnitDiscreteController(Controller):
     def _get_dig_action(self, id):
         return np.array([3, 0, 0, 0, 0, 1])
 
+    def _build_multiple_heavy(
+        self,
+        obs: ObservationStateDict,
+        agent: str,
+        actions: dict
+            ) -> dict:
+        # TODO: remove me
+        factories = obs["factories"][agent]
+        for unit_id in factories:
+            factory = factories[unit_id]
+            if factory["cargo"]["metal"] >= 100 and factory["power"] >= 500:
+                actions[unit_id] = 1
+        return actions
+
+    def _build_multiple_light(
+        self,
+        obs: ObservationStateDict,
+        agent: str,
+        actions: dict
+            ) -> dict:
+        # TODO: remove me
+        factories = obs["factories"][agent]
+        for unit_id in factories:
+            factory = factories[unit_id]
+            if factory["cargo"]["metal"] >= 10 and factory["power"] >= 50:
+                actions[unit_id] = 0
+        return actions
+
     def action_to_lux_action(
         self, agent: str, obs: Dict[str, Any], action: npt.NDArray
     ):
@@ -119,8 +154,9 @@ class SimpleUnitDiscreteController(Controller):
                 # action is a no_op, so we don't update the action queue
                 no_op = True
 
-            # simple trick to help agents conserve power is to avoid updating the action queue
-            # if the agent was previously trying to do that particular action already
+            # simple trick to help agents conserve power is to avoid
+            # updating the action queue if the agent was previously
+            # trying to do that particular action already
             if len(unit["action_queue"]) > 0 and len(action_queue) > 0:
                 same_actions = (unit["action_queue"][0] == action_queue[0]).all()
                 if same_actions:
@@ -130,10 +166,8 @@ class SimpleUnitDiscreteController(Controller):
 
             break
 
-        factories = shared_obs["factories"][agent]
-        if len(units) == 0:
-            for unit_id in factories.keys():
-                lux_action[unit_id] = 1  # build a single heavy
+        # build multiple heavy
+        lux_action = self._build_multiple_heavy(shared_obs, agent, lux_action)
 
         return lux_action
 
@@ -144,7 +178,8 @@ class SimpleUnitDiscreteController(Controller):
         Doesn't account for whether robot has enough power
         """
 
-        # compute a factory occupancy map that will be useful for checking if a board tile
+        # compute a factory occupancy map that will be useful for checking
+        # if a board tile
         # has a factory and which team's factory it is.
         shared_obs = obs[agent]
         factory_occupancy_map = (

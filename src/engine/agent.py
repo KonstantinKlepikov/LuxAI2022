@@ -1,9 +1,12 @@
 """
-This file is where your agent's logic is kept. Define a bidding policy, factory placement policy, as well as a policy for playing the normal phase of the game
+This file is where your agent's logic is kept. Define a bidding policy,
+factory placement policy, as well as a policy for playing the normal phase of the game
 
-The tutorial will learn an RL agent to play the normal phase and use heuristics for the other two phases.
+The tutorial will learn an RL agent to play the normal phase and use heuristics for
+the other two phases.
 
-Note that like the other kits, you can only debug print to standard error e.g. print("message", file=sys.stderr)
+Note that like the other kits, you can only debug print to standard error e.g.
+print("message", file=sys.stderr)
 """
 
 import os.path as osp
@@ -19,7 +22,7 @@ from wrappers import SimpleUnitDiscreteController, SimpleUnitObservationWrapper
 # change this to use weights stored elsewhere
 # make sure the model weights are submitted with the other code files
 # any files in the logs folder are not necessary
-MODEL_WEIGHTS_RELATIVE_PATH = "./best_model.zip"
+MODEL_WEIGHTS_RELATIVE_PATH = "./data/best_model.zip"
 
 
 class Agent:
@@ -76,19 +79,23 @@ class Agent:
         return dict(spawn=pos, metal=metal, water=metal)
 
     def act(self, step: int, obs, remainingOverageTime: int = 60):
-        # first convert observations using the same observation wrapper you used for training
-        # note that SimpleUnitObservationWrapper takes input as the full observation for both players and returns an obs for players
+        # first convert observations using the same observation wrapper
+        # you used for training note that SimpleUnitObservationWrapper
+        # takes input as the full observation for both players and returns
+        # an obs for players
         raw_obs = dict(player_0=obs, player_1=obs)
         obs = SimpleUnitObservationWrapper.convert_obs(raw_obs, env_cfg=self.env_cfg)
         obs = obs[self.player]
 
         obs = th.from_numpy(obs).float()
         with th.no_grad():
-            # NOTE: we set deterministic to False here, which is only recommended for RL agents
-            # that create too many invalid actions (less of an issue if you train with invalid action masking)
+            # NOTE: we set deterministic to False here, which is only recommended
+            # for RL agents that create too many invalid actions
+            # (less of an issue if you train with invalid action masking)
 
-            # to improve performance, we have a rule based action mask generator for the controller used
-            # which will force the agent to generate actions that are valid only.
+            # to improve performance, we have a rule based action mask generator
+            # for the controller used which will force the agent to generate
+            # actions that are valid only.
             action_mask = (
                 th.from_numpy(self.controller.action_masks(self.player, raw_obs))
                 .unsqueeze(0)  # we unsqueeze/add an extra batch dimension =
@@ -102,17 +109,19 @@ class Agent:
                 .numpy()
             )
 
-        # use our controller which we trained with in train.py to generate a Lux S2 compatible action
+        # use our controller which we trained with in train.py to generate a Lux S2
+        # compatible action
         lux_action = self.controller.action_to_lux_action(
             self.player, raw_obs, actions[0]
         )
 
-        # commented code below adds watering lichen which can easily improve your agent
-        # shared_obs = raw_obs[self.player]
-        # factories = shared_obs["factories"][self.player]
-        # for unit_id in factories.keys():
-        #     factory = factories[unit_id]
-        #     if 1000 - step < 50 and factory["cargo"]["water"] > 100:
-        #         lux_action[unit_id] = 2 # water and grow lichen at the very end of the game
+        # commented code below adds watering lichen which can easily
+        # improve your agent
+        shared_obs = raw_obs[self.player]
+        factories = shared_obs["factories"][self.player]
+        for unit_id in factories.keys():
+            factory = factories[unit_id]
+            if 1000 - step < 50 and factory["cargo"]["water"] > 100:
+                lux_action[unit_id] = 2 # water and grow lichen at the very end of the game
 
         return lux_action

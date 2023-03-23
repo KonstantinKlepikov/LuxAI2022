@@ -1,8 +1,7 @@
 """
-Implementation of RL agent. Note that luxai_s2 and stable_baselines3 are packages not available during the competition running (ATM)
+Implementation of RL agent. Note that luxai_s2 and stable_baselines3 are
+packages not available during the competition running (ATM)
 """
-
-
 import copy
 import os.path as osp
 
@@ -36,7 +35,8 @@ from wrappers import SimpleUnitDiscreteController, SimpleUnitObservationWrapper
 class CustomEnvWrapper(gym.Wrapper):
     def __init__(self, env: gym.Env) -> None:
         """
-        Adds a custom reward and turns the LuxAI_S2 environment into a single-agent environment for easy training
+        Adds a custom reward and turns the LuxAI_S2 environment into a single-agent
+        environment for easy training
         """
         super().__init__(env)
         self.prev_step_metrics = None
@@ -48,7 +48,8 @@ class CustomEnvWrapper(gym.Wrapper):
         opp_factories = self.env.state.factories[opp_agent]
         for k in opp_factories.keys():
             factory = opp_factories[k]
-            # set enemy factories to have 1000 water to keep them alive the whole around and treat the game as single-agent
+            # set enemy factories to have 1000 water to keep them alive the
+            # whole around and treat the game as single-agent
             factory.cargo.water = 1000
 
         # submit actions for just one agent to make it single-agent
@@ -58,7 +59,8 @@ class CustomEnvWrapper(gym.Wrapper):
         obs = obs[agent]
         done = done[agent]
 
-        # we collect stats on teams here. These are useful stats that can be used to help generate reward functions
+        # we collect stats on teams here. These are useful stats that can be
+        # used to help generate reward functions
         stats: StatsStateDict = self.env.state.stats[agent]
 
         info = dict()
@@ -68,22 +70,26 @@ class CustomEnvWrapper(gym.Wrapper):
         )
         metrics["water_produced"] = stats["generation"]["water"]
 
-        # we save these two to see often the agent updates robot action queues and how often enough
+        # we save these two to see often the agent updates robot action queues
+        # and how often enough
         # power to do so and succeed (less frequent updates = more power is saved)
         metrics["action_queue_updates_success"] = stats["action_queue_updates_success"]
         metrics["action_queue_updates_total"] = stats["action_queue_updates_total"]
 
-        # we can save the metrics to info so we can use tensorboard to log them to get a glimpse into how our agent is behaving
+        # we can save the metrics to info so we can use tensorboard to log
+        # them to get a glimpse into how our agent is behaving
         info["metrics"] = metrics
 
         reward = 0
         if self.prev_step_metrics is not None:
-            # we check how much ice and water is produced and reward the agent for generating both
+            # we check how much ice and water is produced and reward the agent
+            # for generating both
             ice_dug_this_step = metrics["ice_dug"] - self.prev_step_metrics["ice_dug"]
             water_produced_this_step = (
                 metrics["water_produced"] - self.prev_step_metrics["water_produced"]
             )
-            # we reward water production more as it is the most important resource for survival
+            # we reward water production more as it is the most important resource
+            # for survival
             reward = ice_dug_this_step / 100 + water_produced_this_step
 
         self.prev_step_metrics = copy.deepcopy(metrics)
@@ -145,12 +151,15 @@ def make_env(env_id: str, rank: int, seed: int = 0, max_episode_steps=100):
     def _init() -> gym.Env:
         # verbose = 0
         # collect stats so we can create reward functions
-        # max factories set to 2 for simplification and keeping returns consistent as we survive longer if there are more initial resources
+        # max factories set to 2 for simplification and keeping returns consistent
+        # as we survive longer if there are more initial resources
         env = gym.make(env_id, verbose=0, collect_stats=True, MAX_FACTORIES=2)
 
-        # Add a SB3 wrapper to make it work with SB3 and simplify the action space with the controller
-        # this will remove the bidding phase and factory placement phase. For factory placement we use
-        # the provided place_near_random_ice function which will randomly select an ice tile and place a factory near it.
+        # Add a SB3 wrapper to make it work with SB3 and simplify the action space
+        # with the controller this will remove the bidding phase and factory
+        # placement phase. For factory placement we use the provided
+        # place_near_random_ice function which will randomly select
+        # an ice tile and place a factory near it.
 
         env = SB3Wrapper(
             env,

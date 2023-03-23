@@ -8,10 +8,14 @@ from gym import spaces
 
 class SimpleUnitObservationWrapper(gym.ObservationWrapper):
     """
-    A simple state based observation to work with in pair with the SimpleUnitDiscreteController
+    A simple state based observation to work with in pair with the
+    SimpleUnitDiscreteController
 
-    It contains info only on the first robot, the first factory you own, and some useful features. If there are no owned robots the observation is just zero.
-    No information about the opponent is included. This will generate observations for all teams.
+    It contains info only on the first robot, the first factory you own,
+    and some useful features. If there are no owned robots the observation
+    is just zero.
+    No information about the opponent is included. This will generate observations
+    for all teams.
 
     Included features:
     - First robot's stats

@@ -1,10 +1,11 @@
-import sys
+# import sys
 from typing import Any, Dict
 
 import numpy as np
 import numpy.typing as npt
 from gym import spaces
 from luxai_s2.state import ObservationStateDict
+from lux.config import EnvConfig
 
 
 # Controller class copied here since you won't have access to the luxai_s2
@@ -31,7 +32,7 @@ class Controller:
 
 
 class SimpleUnitDiscreteController(Controller):
-    def __init__(self, env_cfg) -> None:
+    def __init__(self, env_cfg: EnvConfig) -> None:
         """
         A simple controller that controls only the robot that will get spawned.
         Moreover, it will always try to spawn one heavy robot if there are
@@ -103,34 +104,6 @@ class SimpleUnitDiscreteController(Controller):
     def _get_dig_action(self, id):
         return np.array([3, 0, 0, 0, 0, 1])
 
-    def _build_multiple_heavy(
-        self,
-        obs: ObservationStateDict,
-        agent: str,
-        actions: dict
-            ) -> dict:
-        # TODO: remove me
-        factories = obs["factories"][agent]
-        for unit_id in factories:
-            factory = factories[unit_id]
-            if factory["cargo"]["metal"] >= 100 and factory["power"] >= 500:
-                actions[unit_id] = 1
-        return actions
-
-    def _build_multiple_light(
-        self,
-        obs: ObservationStateDict,
-        agent: str,
-        actions: dict
-            ) -> dict:
-        # TODO: remove me
-        factories = obs["factories"][agent]
-        for unit_id in factories:
-            factory = factories[unit_id]
-            if factory["cargo"]["metal"] >= 10 and factory["power"] >= 50:
-                actions[unit_id] = 0
-        return actions
-
     def action_to_lux_action(
         self, agent: str, obs: Dict[str, Any], action: npt.NDArray
     ):
@@ -166,8 +139,39 @@ class SimpleUnitDiscreteController(Controller):
 
             break
 
-        # build multiple heavy
-        lux_action = self._build_multiple_heavy(shared_obs, agent, lux_action)
+        factories = shared_obs["factories"][agent]
+        if len(units) == 0:
+            for unit_id in factories.keys():
+                lux_action[unit_id] = 0  # build a single light
+
+        return lux_action
+
+    def action_to_lux_action_full(
+        self,
+        action: npt.NDArray,
+        lux_action: dict,
+        unit_id: str,
+        unit_action_queue: list
+            ):
+        action_queue = []
+        no_op = False
+        if self._is_move_action(action):
+            action_queue = [self._get_move_action(action)]
+        elif self._is_transfer_action(action):
+            action_queue = [self._get_transfer_action(action)]
+        elif self._is_pickup_action(action):
+            action_queue = [self._get_pickup_action(action)]
+        elif self._is_dig_action(action):
+            action_queue = [self._get_dig_action(action)]
+        else:
+            no_op = True
+
+        if len(unit_action_queue) > 0 and len(action_queue) > 0:
+            same_actions = (unit_action_queue[0] == action_queue[0]).all()
+            if same_actions:
+                no_op = True
+        if not no_op:
+            lux_action[unit_id] = action_queue
 
         return lux_action
 

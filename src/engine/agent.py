@@ -18,6 +18,7 @@ import torch as th
 from lux.config import EnvConfig
 from nn import load_policy
 from wrappers import SimpleUnitDiscreteController, SimpleUnitObservationWrapper
+from heuristics.building import BuildSomething
 
 # change this to use weights stored elsewhere
 # make sure the model weights are submitted with the other code files
@@ -78,50 +79,91 @@ class Agent:
         metal = obs["teams"][self.player]["metal"]
         return dict(spawn=pos, metal=metal, water=metal)
 
+    # def act(self, step: int, obs, remainingOverageTime: int = 60):
+    #     # first convert observations using the same observation wrapper
+    #     # you used for training note that SimpleUnitObservationWrapper
+    #     # takes input as the full observation for both players and returns
+    #     # an obs for players
+    #     raw_obs = dict(player_0=obs, player_1=obs)
+    #     obs = SimpleUnitObservationWrapper.convert_obs(raw_obs, env_cfg=self.env_cfg)
+    #     obs = obs[self.player]
+
+    #     obs = th.from_numpy(obs).float()
+    #     with th.no_grad():
+    #         # NOTE: we set deterministic to False here, which is only recommended
+    #         # for RL agents that create too many invalid actions
+    #         # (less of an issue if you train with invalid action masking)
+
+    #         # to improve performance, we have a rule based action mask generator
+    #         # for the controller used which will force the agent to generate
+    #         # actions that are valid only.
+    #         action_mask = (
+    #             th.from_numpy(self.controller.action_masks(self.player, raw_obs))
+    #             .unsqueeze(0)  # we unsqueeze/add an extra batch dimension =
+    #             .bool()
+    #         )
+    #         actions = (
+    #             self.policy.act(
+    #                 obs.unsqueeze(0), deterministic=False, action_masks=action_mask
+    #             )
+    #             .cpu()
+    #             .numpy()
+    #         )
+
+    #     # use our controller which we trained with in train.py to generate a Lux S2
+    #     # compatible action
+    #     lux_action = self.controller.action_to_lux_action(
+    #         self.player, raw_obs, actions[0]
+    #     )
+
+    #     # commented code below adds watering lichen which can easily
+    #     # improve your agent
+    #     shared_obs = raw_obs[self.player]
+    #     factories = shared_obs["factories"][self.player]
+    #     for unit_id in factories.keys():
+    #         factory = factories[unit_id]
+    #         if 1000 - step < 50 and factory["cargo"]["water"] > 100:
+    #             lux_action[unit_id] = 2 # water and grow lichen at the very end of the game
+
+    #     return lux_action
+
     def act(self, step: int, obs, remainingOverageTime: int = 60):
-        # first convert observations using the same observation wrapper
-        # you used for training note that SimpleUnitObservationWrapper
-        # takes input as the full observation for both players and returns
-        # an obs for players
         raw_obs = dict(player_0=obs, player_1=obs)
-        obs = SimpleUnitObservationWrapper.convert_obs(raw_obs, env_cfg=self.env_cfg)
-        obs = obs[self.player]
+        obs_conv = SimpleUnitObservationWrapper.convert_obs_full(raw_obs, env_cfg=self.env_cfg)
+        obs_conv = obs_conv[self.player]
 
-        obs = th.from_numpy(obs).float()
-        with th.no_grad():
-            # NOTE: we set deterministic to False here, which is only recommended
-            # for RL agents that create too many invalid actions
-            # (less of an issue if you train with invalid action masking)
-
-            # to improve performance, we have a rule based action mask generator
-            # for the controller used which will force the agent to generate
-            # actions that are valid only.
-            action_mask = (
-                th.from_numpy(self.controller.action_masks(self.player, raw_obs))
-                .unsqueeze(0)  # we unsqueeze/add an extra batch dimension =
-                .bool()
-            )
-            actions = (
-                self.policy.act(
-                    obs.unsqueeze(0), deterministic=False, action_masks=action_mask
+        lux_action = dict()
+        for k, (o, q) in obs_conv.items():
+            o = th.from_numpy(o).float()
+            with th.no_grad():
+                action_mask = (
+                    th.from_numpy(self.controller.action_masks(self.player, raw_obs))
+                    .unsqueeze(0)
+                    .bool()
                 )
-                .cpu()
-                .numpy()
-            )
+                actions = (
+                    self.policy.act(
+                        o.unsqueeze(0), deterministic=False, action_masks=action_mask
+                    )
+                    .cpu()
+                    .numpy()
+                )
 
-        # use our controller which we trained with in train.py to generate a Lux S2
-        # compatible action
-        lux_action = self.controller.action_to_lux_action(
-            self.player, raw_obs, actions[0]
-        )
+                lux_action = self.controller.action_to_lux_action_full(
+                    action=actions[0],
+                    lux_action=lux_action,
+                    unit_id=k,
+                    unit_action_queue=q
+                )
 
-        # commented code below adds watering lichen which can easily
-        # improve your agent
+        builder = BuildSomething(obs, self.player)
+        lux_action = builder.build_multiple_light(lux_action)
+
         shared_obs = raw_obs[self.player]
         factories = shared_obs["factories"][self.player]
         for unit_id in factories.keys():
             factory = factories[unit_id]
             if 1000 - step < 50 and factory["cargo"]["water"] > 100:
-                lux_action[unit_id] = 2 # water and grow lichen at the very end of the game
+                lux_action[unit_id] = 2
 
         return lux_action

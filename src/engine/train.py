@@ -33,11 +33,12 @@ from wrappers import SimpleUnitDiscreteController, SimpleUnitObservationWrapper
 
 
 class CustomEnvWrapper(gym.Wrapper):
+    """
+    Adds a custom reward and turns the LuxAI_S2 environment into a single-agent
+    environment for easy training
+    """
+
     def __init__(self, env: gym.Env) -> None:
-        """
-        Adds a custom reward and turns the LuxAI_S2 environment into a single-agent
-        environment for easy training
-        """
         super().__init__(env)
         self.prev_step_metrics = None
 
@@ -71,8 +72,8 @@ class CustomEnvWrapper(gym.Wrapper):
         metrics["water_produced"] = stats["generation"]["water"]
 
         # we save these two to see often the agent updates robot action queues
-        # and how often enough
-        # power to do so and succeed (less frequent updates = more power is saved)
+        # and how often enough power to do so and succeed
+        # (less frequent updates = more power is saved)
         metrics["action_queue_updates_success"] = stats["action_queue_updates_success"]
         metrics["action_queue_updates_total"] = stats["action_queue_updates_total"]
 

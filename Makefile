@@ -1,5 +1,5 @@
 fit:
-	cd src/engine && python train.py --n-envs 10 --log-path logs/fit/exp_$(ARG) --seed 42
+	cd src/engine && python train.py --n-envs 10 --log-path logs/fit/exp_$(DEST) --seed ${SEED}
 
 board:
 	cd src/engine && tensorboard --logdir logs

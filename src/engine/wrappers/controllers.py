@@ -35,8 +35,6 @@ class SimpleUnitDiscreteController(Controller):
     def __init__(self, env_cfg: EnvConfig) -> None:
         """
         A simple controller that controls only the robot that will get spawned.
-        Moreover, it will always try to spawn one heavy robot if there are
-        none regardless of action given
 
         For the robot unit
         - 4 cardinal direction movement (4 dims)
@@ -58,7 +56,6 @@ class SimpleUnitDiscreteController(Controller):
         To help understand how to this controller works to map one action
         space to the original lux action space, see how the lux action space
         is defined in luxai_s2/spaces/action.py
-
         """
         self.env_cfg = env_cfg
         self.move_act_dims = 4
@@ -127,9 +124,8 @@ class SimpleUnitDiscreteController(Controller):
                 # action is a no_op, so we don't update the action queue
                 no_op = True
 
-            # simple trick to help agents conserve power is to avoid
-            # updating the action queue if the agent was previously
-            # trying to do that particular action already
+            # simple trick to help agents conserve power is to avoid updating the action queue
+            # if the agent was previously trying to do that particular action already
             if len(unit["action_queue"]) > 0 and len(action_queue) > 0:
                 same_actions = (unit["action_queue"][0] == action_queue[0]).all()
                 if same_actions:
@@ -183,8 +179,7 @@ class SimpleUnitDiscreteController(Controller):
         """
 
         # compute a factory occupancy map that will be useful for checking
-        # if a board tile
-        # has a factory and which team's factory it is.
+        # if a board tile has a factory and which team's factory it is.
         shared_obs = obs[agent]
         factory_occupancy_map = (
             np.ones_like(shared_obs["board"]["rubble"], dtype=int) * -1

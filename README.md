@@ -2,7 +2,7 @@
 
 Available cli
 
-- `make fit ARG="42"` where number - is a folder number to save model
+- `make fit DEST="3" SEED="12"` where number - is a folder number to save model
 - `make board` run tensorboard
 - `make play` - get json replay
 - `make replay` - get html replay
